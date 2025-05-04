@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PedidoService {
-    List<Pedido> listar();
+    List<Pedido>listar();
 
     Optional<Pedido> listarPorId(Integer id);
 
