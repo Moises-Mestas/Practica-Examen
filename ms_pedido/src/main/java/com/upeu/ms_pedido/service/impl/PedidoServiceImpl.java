@@ -10,6 +10,7 @@ import com.upeu.ms_pedido.repository.PedidoRepository;
 import com.upeu.ms_pedido.service.PedidoService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,13 +32,37 @@ public class PedidoServiceImpl implements PedidoService {
     // Método con Circuit Breaker para Cliente
     @CircuitBreaker(name = "clienteCircuitBreaker", fallbackMethod = "clienteFallback")
     private Cliente getCliente(Integer clienteId) {
-        return clienteFeign.listById(clienteId).getBody();
+        try {
+            // Obtener el cliente desde el servicio Feign
+            ResponseEntity<Cliente> response = clienteFeign.listById(clienteId);
+            if (response.getBody() != null) {
+                return response.getBody();
+            } else {
+                // Si el cliente no se encuentra, retornar el fallback
+                return clienteFallback(clienteId, new RuntimeException("Cliente no encontrado"));
+            }
+        } catch (Exception e) {
+            // En caso de cualquier error en la llamada, retornamos el fallback
+            return clienteFallback(clienteId, e);
+        }
     }
 
     // Método con Circuit Breaker para Producto
     @CircuitBreaker(name = "productoCircuitBreaker", fallbackMethod = "productoFallback")
     private Producto getProducto(Integer productoId) {
-        return productoFeign.listById(productoId).getBody();
+        try {
+            // Obtener el producto desde el servicio Feign
+            ResponseEntity<Producto> response = productoFeign.listById(productoId);
+            if (response.getBody() != null) {
+                return response.getBody();
+            } else {
+                // Si el producto no se encuentra, retornar el fallback
+                return productoFallback(productoId, new RuntimeException("Producto no encontrado"));
+            }
+        } catch (Exception e) {
+            // En caso de cualquier error en la llamada, retornamos el fallback
+            return productoFallback(productoId, e);
+        }
     }
 
     // Método de fallback para Cliente en caso de error
