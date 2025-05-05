@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/pedido")
@@ -15,12 +16,14 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    // Listar todos los pedidos
     @GetMapping
     public ResponseEntity<List<Pedido>> list() {
-        return ResponseEntity.ok().body(pedidoService.listar());
+        List<Pedido> pedidos = pedidoService.listar();
+        if (pedidos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(pedidos);
     }
-
     // Guardar un nuevo pedido
     @PostMapping
     public ResponseEntity<Pedido> save(@RequestBody Pedido pedido) {
@@ -35,13 +38,18 @@ public class PedidoController {
 
     // Buscar pedido por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Pedido> listById(@PathVariable(required = true) Integer id) {
-        return ResponseEntity.ok().body(pedidoService.listarPorId(id).get());
+    public ResponseEntity<Pedido> listById(@PathVariable Integer id) {
+        Optional<Pedido> pedido = pedidoService.listarPorId(id);
+        if (pedido.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(pedido.get());
     }
-
     // Eliminar un pedido por ID
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Integer id) {
         pedidoService.eliminar(id);
     }
+
+
 }
