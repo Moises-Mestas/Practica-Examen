@@ -12,9 +12,6 @@ public interface ProductoFeign {
 
     @GetMapping("/{id}")
     public ResponseEntity<Producto> listById(@PathVariable(required = true) Integer id);
-    default ResponseEntity<Producto> fallbackProductoPorId(Integer id, Exception e) {
-        // Manejo de fallback: retornar un Producto vacío o respuesta de error.
-        return ResponseEntity.ok(new Producto(id, "Producto no disponible", null));
-    }
+
 
 }

@@ -3,20 +3,19 @@ package com.upeu.ms_pedido.service.impl;
 import com.upeu.ms_pedido.entity.Pedido;
 import com.upeu.ms_pedido.dto.Cliente;
 import com.upeu.ms_pedido.dto.Producto;
-import com.upeu.ms_pedido.dto.Categoria;  // Añadido para categoría
 import com.upeu.ms_pedido.entity.PedidoDetalle;
 import com.upeu.ms_pedido.feign.ClienteFeign;
 import com.upeu.ms_pedido.feign.ProductoFeign;
 import com.upeu.ms_pedido.repository.PedidoRepository;
 import com.upeu.ms_pedido.service.PedidoService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 @Service
 public class PedidoServiceImpl implements PedidoService {
 
@@ -29,20 +28,42 @@ public class PedidoServiceImpl implements PedidoService {
     @Autowired
     private ProductoFeign productoFeign;
 
+    // Método con Circuit Breaker para Cliente
+    @CircuitBreaker(name = "clienteCircuitBreaker", fallbackMethod = "clienteFallback")
+    private Cliente getCliente(Integer clienteId) {
+        return clienteFeign.listById(clienteId).getBody();
+    }
+
+    // Método con Circuit Breaker para Producto
+    @CircuitBreaker(name = "productoCircuitBreaker", fallbackMethod = "productoFallback")
+    private Producto getProducto(Integer productoId) {
+        return productoFeign.listById(productoId).getBody();
+    }
+
+    // Método de fallback para Cliente en caso de error
+    public Cliente clienteFallback(Integer clienteId, Throwable t) {
+        System.out.println("Fallo el servicio de cliente: " + t.getMessage());
+        return new Cliente(clienteId, "Cliente no disponible", "N/A", "N/A", 0);
+    }
+
+    // Método de fallback para Producto en caso de error
+    public Producto productoFallback(Integer productoId, Throwable t) {
+        System.out.println("Fallo el servicio de producto: " + t.getMessage());
+        return new Producto(productoId, "Producto no disponible", null);  // Asumí que la categoría puede ser nula en caso de fallo
+    }
+
     @Override
     public List<Pedido> listar() {
         List<Pedido> pedidos = pedidoRepository.findAll();
 
         // Cargar las relaciones cliente y producto de manera similar a como se hace en listarPorId
         for (Pedido pedido : pedidos) {
-            // Aplicar Circuit Breaker a Cliente
-            Cliente cliente = clienteFeign.listById(pedido.getClienteId()).getBody();
+            Cliente cliente = getCliente(pedido.getClienteId());  // Usando el método con Circuit Breaker
             pedido.setCliente(cliente);
 
             // Cargar los detalles del pedido y los productos
             List<PedidoDetalle> pedidoDetalles = pedido.getDetalle().stream().map(pedidoDetalle -> {
-                // Aplicar Circuit Breaker a Producto
-                Producto producto = productoFeign.listById(pedidoDetalle.getProductoId()).getBody();
+                Producto producto = getProducto(pedidoDetalle.getProductoId());  // Usando el método con Circuit Breaker
                 pedidoDetalle.setProducto(producto);
                 return pedidoDetalle;
             }).collect(Collectors.toList());
@@ -54,19 +75,16 @@ public class PedidoServiceImpl implements PedidoService {
     }
 
     @Override
-    @CircuitBreaker(name = "clienteCircuitBreaker", fallbackMethod = "fallbackCliente")
     public Optional<Pedido> listarPorId(Integer id) {
         try {
             Pedido pedido = pedidoRepository.findById(id).get();
             System.out.println("Pedido obtenido: " + pedido);
 
-            // Intentar obtener el cliente desde el clienteFeign
-            Cliente cliente = clienteFeign.listById(pedido.getClienteId()).getBody();
+            Cliente cliente = getCliente(pedido.getClienteId());  // Usando el método con Circuit Breaker
             System.out.println("Cliente obtenido: " + cliente);
 
-            // Intentar obtener los detalles del pedido y producto
             List<PedidoDetalle> pedidoDetalles = pedido.getDetalle().stream().map(pedidoDetalle -> {
-                Producto producto = productoFeign.listById(pedidoDetalle.getProductoId()).getBody();
+                Producto producto = getProducto(pedidoDetalle.getProductoId());  // Usando el método con Circuit Breaker
                 pedidoDetalle.setProducto(producto);
                 System.out.println("Detalle de producto: " + pedidoDetalle);
                 return pedidoDetalle;
@@ -74,38 +92,30 @@ public class PedidoServiceImpl implements PedidoService {
 
             pedido.setDetalle(pedidoDetalles);
             pedido.setCliente(cliente);
+            System.out.println("Pedido final: " + pedido);
 
             return Optional.of(pedido);
         } catch (Exception e) {
+            // Capturar y registrar cualquier error
             System.err.println("Error al procesar el pedido: " + e.getMessage());
             e.printStackTrace();  // Imprimir la traza completa del error
             return Optional.empty();
         }
     }
 
-    // Fallback para Cliente
-    public Cliente fallbackCliente(Integer id, Throwable throwable) {
-        System.out.println("Fallback activado para Cliente. Error: " + throwable.getMessage());
-        // En este punto, puedes manejar el error como quieras (por ejemplo, devolver un cliente vacío)
-        return new Cliente();  // Retorna un cliente vacío
-    }
-
-    // Fallback para Producto
-    public Producto fallbackProducto(Integer id, Throwable throwable) {
-        System.out.println("Fallback activado para Producto. Error: " + throwable.getMessage());
-        return new Producto();  // Retorna un producto vacío
-    }
-
+    // Guardar un nuevo pedido
     @Override
     public Pedido guardar(Pedido pedido) {
         return pedidoRepository.save(pedido);
     }
 
+    // Actualizar un pedido existente
     @Override
     public Pedido actualizar(Pedido pedido) {
         return pedidoRepository.save(pedido);
     }
 
+    // Eliminar un pedido por ID
     @Override
     public void eliminar(Integer id) {
         pedidoRepository.deleteById(id);

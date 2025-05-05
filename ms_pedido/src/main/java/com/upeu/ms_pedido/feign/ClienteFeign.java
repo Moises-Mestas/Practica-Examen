@@ -13,9 +13,6 @@ public interface ClienteFeign {
     @GetMapping("/{id}")
     public ResponseEntity<Cliente> listById(@PathVariable(required = true) Integer id);
 
-    default ResponseEntity<Cliente> fallbackClientePorId(Integer id, Exception e) {
-        // Manejo de fallback: retornar un Cliente vacío o respuesta de error.
-        return ResponseEntity.ok(new Cliente(id, "Cliente no disponible", "", "", null));
-    }
+
 }
 
