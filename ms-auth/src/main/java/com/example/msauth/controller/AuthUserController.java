@@ -16,26 +16,29 @@ public class AuthUserController {
     AuthUserService authUserService;
 
     @PostMapping("/login")
-    public ResponseEntity<TokenDto> login(@RequestBody AuthUserDto authUserDto) {
+    public ResponseEntity<?> login(@RequestBody AuthUserDto authUserDto) {
         TokenDto tokenDto = authUserService.login(authUserDto);
-        if (tokenDto == null)
-            return ResponseEntity.badRequest().build();
+        if (tokenDto == null) {
+            return ResponseEntity.badRequest().body("Credenciales incorrectas");
+        }
         return ResponseEntity.ok(tokenDto);
     }
 
     @PostMapping("/validate")
-    public ResponseEntity<TokenDto> validate(@RequestParam String token) {
+    public ResponseEntity<?> validate(@RequestParam String token) {
         TokenDto tokenDto = authUserService.validate(token);
-        if (tokenDto == null)
-            return ResponseEntity.badRequest().build();
+        if (tokenDto == null) {
+            return ResponseEntity.badRequest().body("Token inválido o expirado");
+        }
         return ResponseEntity.ok(tokenDto);
     }
 
     @PostMapping("/create")
-    public ResponseEntity<AuthUser> create(@RequestBody AuthUserDto authUserDto) {
+    public ResponseEntity<?> create(@RequestBody AuthUserDto authUserDto) {
         AuthUser authUser = authUserService.save(authUserDto);
-        if (authUser == null)
-            return ResponseEntity.badRequest().build();
+        if (authUser == null) {
+            return ResponseEntity.badRequest().body("El nombre de usuario ya está en uso o hubo un error al registrarse.");
+        }
         return ResponseEntity.ok(authUser);
     }
 }

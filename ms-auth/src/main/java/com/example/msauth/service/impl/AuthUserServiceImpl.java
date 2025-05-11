@@ -74,3 +74,5 @@ public class AuthUserServiceImpl implements AuthUserService {
         return new TokenDto(token);
     }
 }
+
+

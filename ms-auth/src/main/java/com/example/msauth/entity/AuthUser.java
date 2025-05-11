@@ -46,10 +46,10 @@ public class AuthUser {
         this.password = password;
     }
 
-    public AuthUser(Integer id, String password, String userName) {
+    public AuthUser(Integer id, String userName, String password) {
         this.id = id;
-        this.password = password;
         this.userName = userName;
+        this.password = password;
     }
 
     @Override
