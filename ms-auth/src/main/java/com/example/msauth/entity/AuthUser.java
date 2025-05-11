@@ -15,11 +15,50 @@ import javax.persistence.Id;
 @Data
 @Builder
 @NoArgsConstructor
-@AllArgsConstructor
 public class AuthUser {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     private String userName;
     private String password;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public AuthUser(Integer id, String password, String userName) {
+        this.id = id;
+        this.password = password;
+        this.userName = userName;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthUser{" +
+                "id=" + id +
+                ", userName='" + userName + '\'' +
+                ", password='" + password + '\'' +
+                '}';
+    }
 }
+

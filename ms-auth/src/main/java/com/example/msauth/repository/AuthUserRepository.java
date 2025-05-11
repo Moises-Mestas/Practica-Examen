@@ -7,5 +7,5 @@ import java.util.Optional;
 public interface AuthUserRepository extends JpaRepository<AuthUser, Integer> {
 
     // Devolver Optional para manejar casos de ausencia del usuario
-    Optional<AuthUser> findByUsername(String username);
+    Optional<AuthUser> findByUserName(String userName);
 }
