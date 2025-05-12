@@ -21,9 +21,11 @@ spring:
           uri: lb://ms-catalogo1-service
           predicates:
             - Path=/categorias/**, /productos/**
-
+          #pon esto abajo de un microservicio y se protege en este caso solo esta puesto pal de arriba
           filters:
             - AuthFilter
+          #si quieres en otros microservicios solo copia y pega este texto y ponlo abajito :D
+
         - id: ms-cliente-service
           uri: lb://ms-cliente-service
           predicates:
